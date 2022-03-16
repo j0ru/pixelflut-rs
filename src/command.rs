@@ -50,7 +50,7 @@ fn px(input: &str) -> IResult<&str, Command> {
     Ok((input, Command::PX(x,y, maybe_color)))
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Command {
     SIZE,
     HELP,
@@ -64,5 +64,38 @@ impl Command {
             Ok((_, c)) => c,
             Err(_) => Command::NONE
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn size() {
+        assert_eq!(Command::parse("SIZE\n"), Command::SIZE);
+    }
+    
+    #[test]
+    fn help() {
+        assert_eq!(Command::parse("HELP\n"), Command::HELP);
+    }
+
+    #[test]
+    fn no_newline() {
+        assert_eq!(Command::parse("HELP"), Command::NONE);
+    }
+
+    #[test]
+    fn px_get() {
+        assert_eq!(Command::parse("PX 1 1\n"), Command::PX(1, 1, None));
+        assert_eq!(Command::parse("PX 1a 1\n"), Command::NONE);
+        assert_eq!(Command::parse("PX -1 1\n"), Command::NONE);
+    }
+
+    #[test]
+    fn px_set() {
+        assert_eq!(Command::parse("PX 1 1 ff00ff\n"), Command::PX(1, 1, Some(Color {red: 255, green: 0, blue: 255, alpha: 255})));
+        assert_eq!(Command::parse("PX 1 1 aa00ffaa\n"), Command::PX(1, 1, Some(Color {red: 170, green: 0, blue: 255, alpha: 170})));
     }
 }
