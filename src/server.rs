@@ -20,7 +20,7 @@ impl PixelTcpServer {
     pub async fn run(self) {
         let listener = TcpListener::bind(format!("127.0.0.1:{}", self.port))
             .await
-            .expect(&format!("Could not bind to port {}", self.port));
+            .unwrap_or_else(|_| panic!("Could not bind to port {}", self.port));
 
         loop {
             let (socket, _) = listener
@@ -42,23 +42,23 @@ impl PixelTcpServer {
                     let command = Command::parse(&line);
 
                     match command {
-                        Command::SIZE => {
+                        Command::Size => {
                             let (width, height) = field.read().unwrap().image.dimensions();
                             stream
                                 .write(format!("SIZE {} {}\n", width, height).as_bytes())
                                 .await
                                 .ok();
                         }
-                        Command::NONE => {
+                        Command::Failed => {
                             stream.write("ERROR parsing failed\n".as_bytes()).await.ok();
                         }
-                        Command::HELP => {
+                        Command::Help => {
                             stream
                                 .write("ERROR not implemented\n".as_bytes())
                                 .await
                                 .ok();
                         }
-                        Command::PX(x, y, Some(color)) => {
+                        Command::Px(x, y, Some(color)) => {
                             let (width, height) = field.read().unwrap().image.dimensions();
                             if x < width && y < height {
                                 let mut field = field.write().unwrap();
@@ -72,10 +72,10 @@ impl PixelTcpServer {
                                 stream.write("ERROR out of bounds\n".as_bytes()).await.ok();
                             }
                         }
-                        Command::PX(x, y, None) => {
+                        Command::Px(x, y, None) => {
                             let (width, height) = field.read().unwrap().image.dimensions();
                             if x < width && y < height {
-                                let color = field.read().unwrap().image.get_pixel(x, y).clone();
+                                let color = *field.read().unwrap().image.get_pixel(x, y);
                                 stream
                                     .write(
                                         format!(

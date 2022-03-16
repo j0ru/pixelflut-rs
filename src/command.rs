@@ -36,33 +36,33 @@ fn hex_color(input: &str) -> IResult<&str, Color> {
 
 fn size(input: &str) -> IResult<&str, Command> {
     let (input, _) = tag("SIZE")(input)?;
-    Ok((input, Command::SIZE))
+    Ok((input, Command::Size))
 }
 
 fn help(input: &str) -> IResult<&str, Command> {
     let (input, _) = tag("HELP")(input)?;
-    Ok((input, Command::HELP))
+    Ok((input, Command::Help))
 }
 
 fn px(input: &str) -> IResult<&str, Command> {
     let (input, _) = tag("PX")(input)?;
     let (input, (_, x, _, y, maybe_color)) = tuple((space1, complete::u32, space1, complete::u32, opt(preceded(space1, hex_color))))(input)?;
-    Ok((input, Command::PX(x,y, maybe_color)))
+    Ok((input, Command::Px(x,y, maybe_color)))
 }
 
 #[derive(Debug, PartialEq)]
 pub enum Command {
-    SIZE,
-    HELP,
-    PX(u32, u32, Option<Color>),
-    NONE
+    Size,
+    Help,
+    Px(u32, u32, Option<Color>),
+    Failed
 }
 
 impl Command {
     pub fn parse(input: &str) -> Command {
         match terminated(alt((size, help, px)), line_ending)(input) {
             Ok((_, c)) => c,
-            Err(_) => Command::NONE
+            Err(_) => Command::Failed
         }
     }
 }
@@ -73,29 +73,29 @@ mod test {
 
     #[test]
     fn size() {
-        assert_eq!(Command::parse("SIZE\n"), Command::SIZE);
+        assert_eq!(Command::parse("SIZE\n"), Command::Size);
     }
     
     #[test]
     fn help() {
-        assert_eq!(Command::parse("HELP\n"), Command::HELP);
+        assert_eq!(Command::parse("HELP\n"), Command::Help);
     }
 
     #[test]
     fn no_newline() {
-        assert_eq!(Command::parse("HELP"), Command::NONE);
+        assert_eq!(Command::parse("HELP"), Command::Failed);
     }
 
     #[test]
     fn px_get() {
-        assert_eq!(Command::parse("PX 1 1\n"), Command::PX(1, 1, None));
-        assert_eq!(Command::parse("PX 1a 1\n"), Command::NONE);
-        assert_eq!(Command::parse("PX -1 1\n"), Command::NONE);
+        assert_eq!(Command::parse("PX 1 1\n"), Command::Px(1, 1, None));
+        assert_eq!(Command::parse("PX 1a 1\n"), Command::Failed);
+        assert_eq!(Command::parse("PX -1 1\n"), Command::Failed);
     }
 
     #[test]
     fn px_set() {
-        assert_eq!(Command::parse("PX 1 1 ff00ff\n"), Command::PX(1, 1, Some(Color {red: 255, green: 0, blue: 255, alpha: 255})));
-        assert_eq!(Command::parse("PX 1 1 aa00ffaa\n"), Command::PX(1, 1, Some(Color {red: 170, green: 0, blue: 255, alpha: 170})));
+        assert_eq!(Command::parse("PX 1 1 ff00ff\n"), Command::Px(1, 1, Some(Color {red: 255, green: 0, blue: 255, alpha: 255})));
+        assert_eq!(Command::parse("PX 1 1 aa00ffaa\n"), Command::Px(1, 1, Some(Color {red: 170, green: 0, blue: 255, alpha: 170})));
     }
 }

@@ -114,7 +114,7 @@ impl Surface {
                 None => {}
             }
             if need_redraw || self.field.read().unwrap().dirty {
-                if let Err(_) = self.draw() {
+                if self.draw().is_err() {
                    eprintln!("All pools are used by wayland") 
                 }  else {
                     need_redraw = false;
